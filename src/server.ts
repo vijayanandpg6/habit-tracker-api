@@ -13,7 +13,7 @@ const bootstrap = async () => {
   });
 
   const shutdown = async (signal: string) => {
-    logger.info(`${signal} received — shutting down gracefully`);
+    logger.info(`${signal} received : shutting down gracefully`);
     server.close(async () => {
       await disconnectDatabase();
       logger.info('Server closed');
@@ -35,7 +35,10 @@ const bootstrap = async () => {
   });
 
   process.on('uncaughtException', (err) => {
-    logger.error('Uncaught exception', { message: err.message, stack: err.stack });
+    logger.error('Uncaught exception', {
+      message: err.message,
+      stack: err.stack,
+    });
     process.exit(1);
   });
 };

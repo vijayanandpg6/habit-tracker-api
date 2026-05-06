@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import { env } from './config/env';
 import { apiRouter, healthRoutes } from './routes';
+import docsRouter from './routes/docs.routes';
 import { errorMiddleware } from './middlewares/error.middleware';
 import { notFoundMiddleware } from './middlewares/notFound.middleware';
 import { globalRateLimiter } from './middlewares/rateLimiter.middleware';
@@ -12,7 +13,18 @@ export const createApp = () => {
 
   app.set('trust proxy', 1);
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+        },
+      },
+    }),
+  );
   app.use(
     cors({
       origin: env.CLIENT_URL,
@@ -28,6 +40,7 @@ export const createApp = () => {
 
   app.use('/health', healthRoutes);
   app.use('/api/v1', apiRouter);
+  app.use('/api-docs', docsRouter);
 
   app.use(notFoundMiddleware);
   app.use(errorMiddleware);
