@@ -23,7 +23,22 @@ export interface LoginDto {
 export const authService = {
   signup: async ({ email, password }: SignupDto) => {
     const existing = await userRepository.findByEmail(email);
-    if (existing) throw new ConflictError('Email already registered');
+
+    if (existing) {
+      if (existing.isEmailVerified) throw new ConflictError('Email already registered');
+
+      // Unverified user retrying — refresh token and resend email
+      const verificationToken = generateSecureToken();
+      const verificationTokenExpiresAt = new Date(
+        Date.now() + VERIFICATION_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000,
+      );
+      await userRepository.update(String(existing._id), {
+        verificationToken,
+        verificationTokenExpiresAt,
+      });
+      await emailService.sendVerificationEmail(email, verificationToken);
+      return { id: existing._id, email: existing.email };
+    }
 
     const verificationToken = generateSecureToken();
     const verificationTokenExpiresAt = new Date(
@@ -55,7 +70,7 @@ export const authService = {
 
     const token = signToken({ userId: String(user._id), email: user.email });
 
-    return { token, user: { id: user._id, email: user.email } };
+    return { token, user: { id: user._id, email: user.email, isEmailVerified: user.isEmailVerified } };
   },
 
   verifyEmail: async (token: string) => {
