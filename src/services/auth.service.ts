@@ -2,6 +2,7 @@ import { VERIFICATION_TOKEN_EXPIRY_HOURS } from '../constants';
 import { userRepository } from '../repositories/user.repository';
 import { generateSecureToken } from '../utils/crypto';
 import { signToken } from '../utils/jwt';
+import { logger } from '../lib/logger';
 import {
   ConflictError,
   UnauthorizedError,
@@ -36,7 +37,9 @@ export const authService = {
         verificationToken,
         verificationTokenExpiresAt,
       });
-      await emailService.sendVerificationEmail(email, verificationToken);
+      emailService.sendVerificationEmail(email, verificationToken).catch((err) => {
+        logger.error('Failed to send verification email', { email, error: err?.message ?? String(err) });
+      });
       return { id: existing._id, email: existing.email };
     }
 
@@ -52,7 +55,9 @@ export const authService = {
       verificationTokenExpiresAt,
     });
 
-    await emailService.sendVerificationEmail(email, verificationToken);
+    emailService.sendVerificationEmail(email, verificationToken).catch((err) => {
+      logger.error('Failed to send verification email', { email, error: err?.message ?? String(err) });
+    });
 
     return { id: user._id, email: user.email };
   },
